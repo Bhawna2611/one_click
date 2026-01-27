@@ -54,7 +54,7 @@ resource "aws_instance" "public_ubuntu" {
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
   
   # IMPORTANT: Change 'one_click' to the exact name of your key in AWS Console
-  key_name               = "one_click" 
+  key_name               = "one__click" 
 
   tags = merge(var.common_tags, {
     Name = var.public_instance_name
