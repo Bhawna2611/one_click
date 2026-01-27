@@ -2,19 +2,21 @@ pipeline {
     agent any
 
     environment {
-        TF_DIRECTORY      = 'terraform'
-        ANSIBLE_DIRECTORY   = 'ansible'
-        
-        // Mapping Jenkins credentials to variables
-        // Make sure the IDs 'aws-keys' and 'my-server-ssh-key' match exactly in Jenkins
-        AWS_ACCESS_KEY_ID     = credentials('aws-keys-id') // Replace with your actual Credential ID
-        AWS_SECRET_ACCESS_KEY = credentials('aws-keys-secret') // Replace with your actual Credential ID
-        AWS_DEFAULT_REGION    = 'us-east-1' 
+        // Define directory paths based on your repository structure
+        TF_DIRECTORY = 'terraform'
+        ANSIBLE_DIRECTORY = 'ansible'
+        AWS_CREDS = credentials('aws-keys')
+    
+    // Inhe alag variables mein map karna zaroori hai taaki Terraform inhe pehchaan sake
+    AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
+    AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
+    AWS_DEFAULT_REGION    = 'us-east-1'
     }
 
     stages {
         stage('Checkout Source') {
             steps {
+                // Pull the latest code from the Git repository
                 checkout scm
             }
         }
@@ -22,7 +24,7 @@ pipeline {
         stage('Terraform Infrastructure') {
             steps {
                 dir("${env.TF_DIRECTORY}") {
-                    // Terraform will automatically pick up AWS_ACCESS_KEY_ID from environment
+                    // Initialize Terraform and provision the infrastructure
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
                 }
@@ -31,40 +33,41 @@ pipeline {
 
         stage('Ansible Setup & Docker') {
             steps {
-                // withCredentials is used here to handle the SSH Private Key for Ansible
-                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    dir("${env.ANSIBLE_DIRECTORY}") {
-                        // We pass the SSH key to Ansible using --private-key
-                        sh "ansible-playbook -i inventory.ini playbook.yml --private-key=${SSH_KEY}"
-                    }
+                dir("${env.ANSIBLE_DIRECTORY}") {
+                    // Execute Ansible playbook to install Docker on the provisioned nodes
+                    // Ensure inventory.ini contains the target host IPs
+                    sh 'ansible-playbook -i inventory.ini playbook.yml'
                 }
             }
         }
 
         stage('Deploy MySQL on Docker') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "ansible all -i inventory.ini -m shell -a 'docker run -d --name mysql-db mysql:8.0' --private-key=${SSH_KEY}"
-                    }
+                dir("${env.ANSIBLE_DIRECTORY}") {
+                    // Run the MySQL container using Docker commands via Ansible shell module
+                    // This uses the 'Deep Clean' logic we discussed earlier for GPG keys
+                    sh 'ansible all -i inventory.ini -m shell -a "docker run -d --name mysql-db mysql:8.0"'
                 }
             }
         }
-        
+
         stage('Verify Installation') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "ansible all -i inventory.ini -m shell -a 'docker ps | grep mysql' --private-key=${SSH_KEY}"
-                    }
-                }
+                // Final check to ensure the MySQL container is up and running
+                sh 'ansible all -i inventory.ini -m shell -a "docker ps | grep mysql"'
             }
         }
     }
 
     post {
-        always { echo 'Pipeline execution finished.' }
-        success { echo 'Infrastructure and MySQL deployed successfully!' }
-        failure { echo 'Deployment failed. Check Jenkins logs.' }
+        always {
+            echo 'Pipeline execution finished.'
+        }
+        success {
+            echo 'Infrastructure and MySQL deployed successfully!'
+        }
+        failure {
+            echo 'Deployment failed. Please check the Jenkins console output for errors.'
+        }
     }
 }
