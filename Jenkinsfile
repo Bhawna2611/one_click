@@ -2,21 +2,20 @@ pipeline {
     agent any
 
     environment {
-        // Define directory paths based on your repository structure
         TF_DIRECTORY = 'terraform'
         ANSIBLE_DIRECTORY = 'ansible'
+        
+        // AWS Credentials binding
         AWS_CREDS = credentials('aws-keys')
-    
-    // Inhe alag variables mein map karna zaroori hai taaki Terraform inhe pehchaan sake
-    AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
-    AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
-    AWS_DEFAULT_REGION    = 'us-east-1'
+        AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
+        AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
+        AWS_DEFAULT_REGION    = 'us-east-1'
     }
 
     stages {
         stage('Checkout Source') {
             steps {
-                // Pull the latest code from the Git repository
+                // Pull the source code from the repository
                 checkout scm
             }
         }
@@ -24,7 +23,7 @@ pipeline {
         stage('Terraform Infrastructure') {
             steps {
                 dir("${env.TF_DIRECTORY}") {
-                    // Initialize Terraform and provision the infrastructure
+                    // Initialize Terraform and provision the cloud resources
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
                 }
@@ -33,28 +32,35 @@ pipeline {
 
         stage('Ansible Setup & Docker') {
             steps {
-                dir("${env.ANSIBLE_DIRECTORY}") {
-                    // Execute Ansible playbook to install Docker on the provisioned nodes
-                    // Ensure inventory.ini contains the target host IPs
-                    sh 'ansible-playbook -i inventory.ini playbook.yml'
+                // Bind the SSH private key (ID: my-server-ssh-key-v1) to a temporary file path
+                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
+                    dir("${env.ANSIBLE_DIRECTORY}") {
+                        // Disable host key checking to prevent manual interaction and use the private key for connection
+                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=${SSH_KEY} -u ubuntu"
+                    }
                 }
             }
         }
 
         stage('Deploy MySQL on Docker') {
             steps {
-                dir("${env.ANSIBLE_DIRECTORY}") {
-                    // Run the MySQL container using Docker commands via Ansible shell module
-                    // This uses the 'Deep Clean' logic we discussed earlier for GPG keys
-                    sh 'ansible all -i inventory.ini -m shell -a "docker run -d --name mysql-db mysql:8.0"'
+                // Re-bind the SSH key for direct Ansible shell commands
+                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
+                    dir("${env.ANSIBLE_DIRECTORY}") {
+                        // Run MySQL container on remote nodes using the shell module
+                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m shell -a 'docker run -d --name mysql-db -e MYSQL_ROOT_PASSWORD=password mysql:8.0' --private-key=${SSH_KEY} -u ubuntu"
+                    }
                 }
             }
         }
 
         stage('Verify Installation') {
             steps {
-                // Final check to ensure the MySQL container is up and running
-                sh 'ansible all -i inventory.ini -m shell -a "docker ps | grep mysql"'
+                // Final verification step using the SSH key
+                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
+                    // Check if the MySQL container is running across all hosts in the inventory
+                    sh "ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m shell -a 'docker ps | grep mysql' --private-key=${SSH_KEY} -u ubuntu"
+                }
             }
         }
     }
