@@ -39,8 +39,13 @@ pipeline {
                 // Bind the SSH private key (ID: my-server-ssh-key-v1)
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        // Using 'web' group instead of 'all' to avoid running on localhost
-                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=${SSH_KEY} -u ubuntu"
+                        sh """
+                            # Copying key to /tmp as expected by your inventory proxycommand
+                            cp ${SSH_KEY} /tmp/one_click.pem
+                            chmod 400 /tmp/one_click.pem
+                            
+                            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one_click.pem -u ubuntu
+                        """
                     }
                 }
             }
@@ -50,18 +55,21 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        // 1. Copy Dockerfile/app files to remote server
-                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=${SSH_KEY} -u ubuntu"
-
-                        // 2. Build from Dockerfile and Run with sudo (--become)
                         sh """
-                        ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a '
-                        cd /home/ubuntu/docker && \
-                        docker build -t custom-mysql . && \
-                        docker stop mysql-db || true && \
-                        docker rm mysql-db || true && \
-                        docker run -d --name mysql-db -p 3306:3306 custom-mysql' \
-                        --become --private-key=${SSH_KEY} -u ubuntu
+                            cp ${SSH_KEY} /tmp/one_click.pem
+                            chmod 400 /tmp/one_click.pem
+                            
+                            # 1. Copy Dockerfile/app files to remote server
+                            ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one_click.pem -u ubuntu
+
+                            # 2. Build from Dockerfile and Run with sudo (--become)
+                            ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a '
+                            cd /home/ubuntu/docker && \
+                            docker build -t custom-mysql . && \
+                            docker stop mysql-db || true && \
+                            docker rm mysql-db || true && \
+                            docker run -d --name mysql-db -p 3306:3306 custom-mysql' \
+                            --become --private-key=/tmp/one_click.pem -u ubuntu
                         """
                     }
                 }
@@ -71,8 +79,13 @@ pipeline {
         stage('Verify Installation') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
-                    // Verification with sudo to avoid permission issues
-                    sh "ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a 'docker ps | grep mysql' --become --private-key=${SSH_KEY} -u ubuntu"
+                    sh """
+                        cp ${SSH_KEY} /tmp/one_click.pem
+                        chmod 400 /tmp/one_click.pem
+                        
+                        # Verification with sudo to avoid permission issues
+                        ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a 'docker ps | grep mysql' --become --private-key=/tmp/one_click.pem -u ubuntu
+                    """
                 }
             }
         }
@@ -81,6 +94,8 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution finished.'
+            // Cleanup: Security ke liye /tmp se key delete karna achhi practice hai
+            sh 'rm -f /tmp/one_click.pem'
         }
         success {
             echo 'Infrastructure and MySQL deployed successfully!'
@@ -88,5 +103,3 @@ pipeline {
         failure {
             echo 'Deployment failed. Please check the Jenkins console output for errors.'
         }
-    }
-}
