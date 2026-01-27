@@ -1,0 +1,8 @@
+---
+# Install docker role from your Git repository
+# Update the src with your actual Git repository URL
+
+- src: https://github.com/Bhawna2611/one_click.git
+  scm: git
+  version: main
+  name: docker
