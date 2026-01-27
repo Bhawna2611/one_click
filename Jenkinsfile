@@ -5,6 +5,8 @@ pipeline {
         TF_DIRECTORY = 'terraform'
         ANSIBLE_DIRECTORY = 'ansible'
         
+        LC_ALL = 'en_US.UTF-8'
+        LANG   = 'en_US.UTF-8'
         // AWS Credentials binding
         AWS_CREDS = credentials('aws-keys')
         AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
