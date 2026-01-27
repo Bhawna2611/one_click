@@ -68,7 +68,7 @@ resource "aws_instance" "private_ubuntu" {
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
   
   # IMPORTANT: Use the same key here
-  key_name               = "one_click"
+  key_name               = "one__click"
 
   tags = merge(var.common_tags, {
     Name = var.private_instance_name
