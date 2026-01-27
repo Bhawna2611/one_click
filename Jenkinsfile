@@ -5,8 +5,10 @@ pipeline {
         TF_DIRECTORY = 'terraform'
         ANSIBLE_DIRECTORY = 'ansible'
         
+        // Fix for Locale/Encoding error
         LC_ALL = 'en_US.UTF-8'
         LANG   = 'en_US.UTF-8'
+        
         // AWS Credentials binding
         AWS_CREDS = credentials('aws-keys')
         AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
@@ -34,10 +36,10 @@ pipeline {
 
         stage('Ansible Setup & Docker') {
             steps {
-                // Bind the SSH private key (ID: my-server-ssh-key-v1) to a temporary file path
+                // Bind the SSH private key (ID: my-server-ssh-key-v1)
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        // Disable host key checking to prevent manual interaction and use the private key for connection
+                        // Using 'web' group instead of 'all' to avoid running on localhost
                         sh "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=${SSH_KEY} -u ubuntu"
                     }
                 }
@@ -46,11 +48,21 @@ pipeline {
 
         stage('Deploy MySQL on Docker') {
             steps {
-                // Re-bind the SSH key for direct Ansible shell commands
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        // Run MySQL container on remote nodes using the shell module
-                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m shell -a 'docker run -d --name mysql-db -e MYSQL_ROOT_PASSWORD=password mysql:8.0' --private-key=${SSH_KEY} -u ubuntu"
+                        // 1. Copy Dockerfile/app files to remote server
+                        sh "ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=${SSH_KEY} -u ubuntu"
+
+                        // 2. Build from Dockerfile and Run with sudo (--become)
+                        sh """
+                        ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a '
+                        cd /home/ubuntu/docker && \
+                        docker build -t custom-mysql . && \
+                        docker stop mysql-db || true && \
+                        docker rm mysql-db || true && \
+                        docker run -d --name mysql-db -p 3306:3306 custom-mysql' \
+                        --become --private-key=${SSH_KEY} -u ubuntu
+                        """
                     }
                 }
             }
@@ -58,10 +70,9 @@ pipeline {
 
         stage('Verify Installation') {
             steps {
-                // Final verification step using the SSH key
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
-                    // Check if the MySQL container is running across all hosts in the inventory
-                    sh "ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m shell -a 'docker ps | grep mysql' --private-key=${SSH_KEY} -u ubuntu"
+                    // Verification with sudo to avoid permission issues
+                    sh "ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a 'docker ps | grep mysql' --become --private-key=${SSH_KEY} -u ubuntu"
                 }
             }
         }
