@@ -1,4 +1,7 @@
 ---
+- name: Wait for SSH
+      wait_for_connection:
+        timeout: 60
 - name: Update apt cache manually
 
   apt:
