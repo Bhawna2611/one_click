@@ -19,7 +19,6 @@ pipeline {
     stages {
         stage('Checkout Source') {
             steps {
-                // Pull the source code from the repository
                 checkout scm
             }
         }
@@ -27,7 +26,6 @@ pipeline {
         stage('Terraform Infrastructure') {
             steps {
                 dir("${env.TF_DIRECTORY}") {
-                    // Initialize Terraform and provision the cloud resources
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
                 }
@@ -36,14 +34,14 @@ pipeline {
 
         stage('Ansible Setup & Docker') {
             steps {
-                // Bind the SSH private key (ID: my-server-ssh-key-v1)
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
-                            # Copying key to /tmp as expected by your inventory proxycommand
+                            # Copying Jenkins secret key to the path expected by inventory.ini
                             cp ${SSH_KEY} /tmp/one_click.pem
                             chmod 400 /tmp/one_click.pem
                             
+                            # Running the playbook
                             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one_click.pem -u ubuntu
                         """
                     }
@@ -56,13 +54,14 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
+                            # Ensure key exists and has correct permissions
                             cp ${SSH_KEY} /tmp/one_click.pem
                             chmod 400 /tmp/one_click.pem
-                            
+
                             # 1. Copy Dockerfile/app files to remote server
                             ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one_click.pem -u ubuntu
 
-                            # 2. Build from Dockerfile and Run with sudo (--become)
+                            # 2. Build and Run MySQL
                             ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a '
                             cd /home/ubuntu/docker && \
                             docker build -t custom-mysql . && \
@@ -83,7 +82,6 @@ pipeline {
                         cp ${SSH_KEY} /tmp/one_click.pem
                         chmod 400 /tmp/one_click.pem
                         
-                        # Verification with sudo to avoid permission issues
                         ANSIBLE_HOST_KEY_CHECKING=False ansible web -i inventory.ini -m shell -a 'docker ps | grep mysql' --become --private-key=/tmp/one_click.pem -u ubuntu
                     """
                 }
@@ -94,7 +92,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution finished.'
-            // Cleanup: Security ke liye /tmp se key delete karna achhi practice hai
+            // Cleanup sensitive key file from /tmp
             sh 'rm -f /tmp/one_click.pem'
         }
         success {
@@ -103,3 +101,5 @@ pipeline {
         failure {
             echo 'Deployment failed. Please check the Jenkins console output for errors.'
         }
+    }
+}
