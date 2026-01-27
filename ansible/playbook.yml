@@ -1,16 +1,6 @@
 ---
-- hosts: all
-  become: true
-  gather_facts: false  # Stop Ansible from connecting immediately
-  
-  pre_tasks:
-    - name: Wait for SSH to become available
-      wait_for_connection:
-        delay: 10
-        timeout: 100
-
-    - name: Gather facts manually
-      setup:           # Now that connection is confirmed, get server info
-      
+- name: Configure private instance with Docker via bastion
+  hosts: private_instances
+  become: yes
   roles:
     - docker
