@@ -8,14 +8,31 @@ data "aws_ami" "ubuntu_22" {
 }
 
 resource "aws_security_group" "ssh_access" {
-  name   = "allow_ssh"
+  name   = "allow_ssh_docker"
   vpc_id = var.vpc_id
 
+  # SSH Access (Port 22) - Required for Ansible
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # MySQL Access (Port 3306) - Required for Docker MySQL
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow Internal Traffic - Essential for Bastion to Private communication
+  ingress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
   }
 
   egress {
@@ -25,9 +42,8 @@ resource "aws_security_group" "ssh_access" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Applying common tags to the Security Group too
   tags = merge(var.common_tags, {
-    Name = "ssh-security-group"
+    Name = "ssh-docker-sg"
   })
 }
 
@@ -36,8 +52,10 @@ resource "aws_instance" "public_ubuntu" {
   instance_type          = var.instance_type
   subnet_id              = var.public_subnet_id
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
+  
+  # IMPORTANT: Change 'one_click' to the exact name of your key in AWS Console
+  key_name               = "one_click" 
 
-  # Combines common tags + unique name
   tags = merge(var.common_tags, {
     Name = var.public_instance_name
   })
@@ -48,8 +66,10 @@ resource "aws_instance" "private_ubuntu" {
   instance_type          = var.instance_type
   subnet_id              = var.private_subnet_id
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
+  
+  # IMPORTANT: Use the same key here
+  key_name               = "one_click"
 
-  # Combines common tags + unique name
   tags = merge(var.common_tags, {
     Name = var.private_instance_name
   })
