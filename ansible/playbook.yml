@@ -1,16 +1,8 @@
 ---
-- hosts: all
+- name: Configure Web Server and Install Docker
+  hosts: all
   become: true
-  gather_facts: false  # Stop Ansible from connecting immediately
-  
-  pre_tasks:
-    - name: Wait for SSH to become available
-      wait_for_connection:
-        delay: 10
-        timeout: 100
+  gather_facts: yes  # This MUST be yes to detect Ubuntu version
 
-    - name: Gather facts manually
-      setup:           # Now that connection is confirmed, get server info
-      
   roles:
-    - docker
+    - docker         # This calls the docker role

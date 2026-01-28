@@ -1,17 +1,10 @@
 ---
-- name: Wait for SSH
-  wait_for_connection:
-     delay: 5
-     timeout: 300
-
-- name: Update apt cache manually
-
+- name: Update apt package index
   apt:
     update_cache: yes
     force_apt_get: yes
-  ignore_errors: yes
 
-- name: Install required system packages
+- name: Install prerequisite system packages
   apt:
     pkg:
       - apt-transport-https
@@ -19,38 +12,35 @@
       - curl
       - software-properties-common
       - python3-pip
-      - python3-setuptools
     state: present
 
-- name: Add Docker GPG apt Key
+- name: Add Docker official GPG key
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
 
-- name: Add Docker Repository
+- name: Add Docker repository to apt sources
   apt_repository:
-    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
-    update_cache: no
 
-- name: Install Docker Engine
+- name: Install Docker Engine (Community Edition)
   apt:
     name: 
       - docker-ce
       - docker-ce-cli
       - containerd.io
     state: latest
-    update_cache: no
-    force_apt_get: yes
+    update_cache: yes
 
-- name: Ensure Docker is started and enabled
+- name: Start Docker service and enable on boot
   service:
     name: docker
     state: started
     enabled: yes
 
-- name: Add current user to docker group
+- name: Add ubuntu user to docker group
   user:
-    name: "{{ lookup('env', 'USER') }}"
+    name: ubuntu
     groups: docker
     append: yes
