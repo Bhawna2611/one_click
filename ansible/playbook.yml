@@ -1,6 +1,6 @@
 ---
 - name: Configure private instance with Docker via bastion
-  hosts: private_instances
+  hosts: web
   become: yes
   roles:
     - docker
