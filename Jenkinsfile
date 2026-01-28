@@ -55,8 +55,8 @@ pipeline {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
                             # Setup SSH key
-                            cp ${SSH_KEY} /tmp/one_click.pem
-                            chmod 400 /tmp/one_click.pem
+                            cp ${SSH_KEY} /tmp/one__click.pem
+                            chmod 400 /tmp/one__click.pem
                             
                             # Backup original inventory
                             cp inventory.ini inventory.ini.bak
@@ -90,12 +90,12 @@ pipeline {
                     sh """
                         # Test bastion connection
                         echo "Testing connection to Bastion..."
-                        ssh -i /tmp/one_click.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@${BASTION_IP} "echo 'Bastion connection successful'"
+                        ssh -i /tmp/one__click.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@${BASTION_IP} "echo 'Bastion connection successful'"
                         
                         # Test private instance connection via bastion
                         echo "Testing connection to Private Instance via Bastion..."
-                        ssh -i /tmp/one_click.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-                            -o ProxyCommand="ssh -i /tmp/one_click.pem -W %h:%p -q ubuntu@${BASTION_IP}" \
+                        ssh -i /tmp/one__click.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+                            -o ProxyCommand="ssh -i /tmp/one__click.pem -W %h:%p -q ubuntu@${BASTION_IP}" \
                             ubuntu@${PRIVATE_IP} "echo 'Private instance connection successful'"
                     """
                 }
@@ -108,7 +108,7 @@ pipeline {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
                             # Run playbook to install Docker
-                            ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one_click.pem -v
+                            ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one__click.pem -v
                         """
                     }
                 }
@@ -123,7 +123,7 @@ pipeline {
                             # Copy Dockerfile/app files to remote server via bastion
                             ansible private_instances -i inventory.ini -m copy \
                                 -a 'src=../docker/ dest=/home/ubuntu/' \
-                                --private-key=/tmp/one_click.pem
+                                --private-key=/tmp/one__click.pem
                             
                             # Build and Run MySQL container
                             ansible private_instances -i inventory.ini -m shell \
@@ -132,7 +132,7 @@ pipeline {
                                     docker stop mysql-db || true && \
                                     docker rm mysql-db || true && \
                                     docker run -d --name mysql-db -p 3306:3306 custom-mysql' \
-                                --become --private-key=/tmp/one_click.pem
+                                --become --private-key=/tmp/one__click.pem
                         """
                     }
                 }
@@ -147,12 +147,12 @@ pipeline {
                             # Verify Docker is running
                             ansible private_instances -i inventory.ini -m shell \
                                 -a 'docker --version' \
-                                --private-key=/tmp/one_click.pem
+                                --private-key=/tmp/one__click.pem
                             
                             # Verify MySQL container is running
                             ansible private_instances -i inventory.ini -m shell \
                                 -a 'docker ps | grep mysql' \
-                                --become --private-key=/tmp/one_click.pem
+                                --become --private-key=/tmp/one__click.pem
                         """
                     }
                 }
@@ -164,7 +164,7 @@ pipeline {
         always {
             echo 'Pipeline execution finished.'
             // Cleanup sensitive key file from /tmp
-            sh 'rm -f /tmp/one_click.pem'
+            sh 'rm -f /tmp/one__click.pem'
             
             // Restore original inventory file
             dir("${env.ANSIBLE_DIRECTORY}") {
