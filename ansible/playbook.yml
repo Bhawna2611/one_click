@@ -1,6 +1,6 @@
 ---
 - name: Configure Web Server and Install Docker
-  hosts: all
+  hosts: web
   become: true
   gather_facts: yes  # This MUST be yes to detect Ubuntu version
 
