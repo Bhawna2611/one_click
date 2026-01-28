@@ -127,7 +127,7 @@ pipeline {
                             
                             # Build and Run MySQL container
                             ansible web -i inventory.ini -m shell \
-                                -a 'cd /home/ubuntu/docker && \
+                                -a 'cd /home/ubuntu/ && \
                                     docker build -t custom-mysql . && \
                                     docker stop mysql-db || true && \
                                     docker rm mysql-db || true && \
