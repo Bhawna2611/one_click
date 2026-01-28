@@ -121,12 +121,12 @@ pipeline {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
                             # Copy Dockerfile/app files to remote server via bastion
-                            ansible private_instances -i inventory.ini -m copy \
+                            ansible web -i inventory.ini -m copy \
                                 -a 'src=../docker/ dest=/home/ubuntu/' \
                                 --private-key=/tmp/one__click.pem
                             
                             # Build and Run MySQL container
-                            ansible private_instances -i inventory.ini -m shell \
+                            ansible web -i inventory.ini -m shell \
                                 -a 'cd /home/ubuntu/docker && \
                                     docker build -t custom-mysql . && \
                                     docker stop mysql-db || true && \
@@ -145,12 +145,12 @@ pipeline {
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh """
                             # Verify Docker is running
-                            ansible private_instances -i inventory.ini -m shell \
+                            ansible web -i inventory.ini -m shell \
                                 -a 'docker --version' \
                                 --private-key=/tmp/one__click.pem
                             
                             # Verify MySQL container is running
-                            ansible private_instances -i inventory.ini -m shell \
+                            ansible web -i inventory.ini -m shell \
                                 -a 'docker ps | grep mysql' \
                                 --become --private-key=/tmp/one__click.pem
                         """
