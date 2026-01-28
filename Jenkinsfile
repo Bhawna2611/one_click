@@ -44,7 +44,7 @@ pipeline {
                             chmod 400 /tmp/one_click.pem
                             
                             # Run base playbook to configure the remote server (e.g., Install Docker)
-                            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one_click.pem -u ubuntu
+                            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one__click.pem -u ubuntu
                         """
                     }
                 }
