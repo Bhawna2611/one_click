@@ -1,19 +1,17 @@
 pipeline {
     agent any
     
-    // This block enables the "Build with Parameters" button in Jenkins
     parameters {
+        // This allows you to choose apply or destroy at the start of the build
         choice(name: 'TF_ACTION', choices: ['apply', 'destroy'], description: 'Select the Terraform action to perform')
     }
 
     environment {
         TF_DIRECTORY = 'terraform'
         ANSIBLE_DIRECTORY = 'ansible'
-        // Using credentials directly to avoid insecure interpolation warnings
+        AWS_DEFAULT_REGION = 'us-east-1'
+        // Jenkins maps 'aws-keys' to AWS_CREDS_USR and AWS_CREDS_PSW automatically
         AWS_CREDS = credentials('aws-keys')
-        AWS_ACCESS_KEY_ID     = credentials('aws-keys').username 
-        AWS_SECRET_ACCESS_KEY = credentials('aws-keys').password
-        AWS_DEFAULT_REGION    = 'us-east-1'
     }
 
     stages {
@@ -23,16 +21,18 @@ pipeline {
             }
         }
 
-        // The "Choose Action" stage is removed because parameters are now set at the start
-
         stage('Terraform Infrastructure') {
+            environment {
+                // Correct way to reference credentials variables in a stage
+                AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
+                AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
+            }
             steps {
                 dir("${env.TF_DIRECTORY}") {
-                    // FIX: -input=false and -force-copy prevents the interactive prompt error
+                    // Added -input=false and -force-copy to stop Terraform from asking for manual input
                     sh 'terraform init -input=false -migrate-state -force-copy'
                     
                     script {
-                        // Access the parameter using the 'params' object
                         if (params.TF_ACTION == 'apply') {
                             sh 'terraform apply -auto-approve -input=false'
                         } else {
@@ -44,7 +44,6 @@ pipeline {
         }
 
         stage('Extract & Update Inventory') {
-            // Run this only if the action was 'apply'
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 script {
@@ -64,7 +63,8 @@ pipeline {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 dir("${env.ANSIBLE_DIRECTORY}") {
-                    sh 'ansible-lint -v playbook.yml || true' 
+                    // || true prevents the pipeline from failing if there are only minor linting warnings
+                    sh 'ansible-lint -v playbook.yml || true'
                 }
             }
         }
@@ -103,7 +103,7 @@ pipeline {
 
     post { 
         always { 
-            // Cleanup the temporary SSH key
+            // Cleanup sensitive files from the Jenkins agent
             sh 'rm -f /tmp/one_click.pem' 
         } 
     }
