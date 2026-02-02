@@ -1,26 +1,31 @@
 variable "vpc_id" {}
-variable "public_subnet_id" {}
-variable "private_subnet_id" {}
-variable "instance_type" { default = "t2.micro" }
 
+variable "private_subnets" {
+  type = list(string)
+}
 
+variable "tg_arn" {}
+
+variable "instance_type" {
+  default = "t2.micro"
+}
+
+variable "key_name" {}
+
+variable "user_data" {
+  default = ""
+}
+
+variable "bastion_sg_id" {}
+
+variable "alb_sg_id" {}
+
+variable "asg_name" {
+  description = "Name for the Auto Scaling Group"
+  type        = string
+  default     = "mysql-asg"
+}
 
 variable "common_tags" {
-  description = "Universal tags applied to all resources"
-  type        = map(string)
-  default     = {
-    Project     = "Cloud-Deployment"
-    Environment = "Dev"
-    Owner       = "DevOps-Team"
-  }
-}
-
-variable "public_instance_name" {
-  type    = string
-  default = "public-ubuntu-server"
-}
-
-variable "private_instance_name" {
-  type    = string
-  default = "private-ubuntu-server"
+  type = map(string)
 }

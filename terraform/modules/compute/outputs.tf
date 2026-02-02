@@ -1,6 +1,13 @@
-output "private_ip" {
-  value = aws_instance.private_ubuntu.private_ip
+output "compute_sg_id" {
+  value = aws_security_group.compute_sg.id
 }
-output "public_ip" {
-  value = aws_instance.public_ubuntu.public_ip
+
+output "instance_ids" {
+  description = "List of instance IDs currently in the compute ASG"
+  value       = data.aws_instances.asg_instances.ids
+}
+
+output "private_ips" {
+  description = "List of private IPs for instances currently in the compute ASG"
+  value       = data.aws_instances.asg_instances.private_ips
 }

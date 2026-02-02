@@ -12,15 +12,30 @@ pipeline {
         stage('Checkout Source') {
             steps { checkout scm }
         }
+        stage('Choose Action') {
+            steps {
+                script {
+                    def action = input message: 'Choose Terraform action', parameters: [choice(name: 'ACTION', choices: "apply\ndestroy", description: 'Choose apply or destroy')]
+                    env.TF_ACTION = action
+                }
+            }
+        }
         stage('Terraform Infrastructure') {
             steps {
                 dir("${env.TF_DIRECTORY}") {
                     sh 'terraform init'
-                    sh 'terraform apply -auto-approve'
+                    script {
+                        if (env.TF_ACTION == 'apply') {
+                            sh 'terraform apply -auto-approve'
+                        } else {
+                            sh 'terraform destroy -auto-approve'
+                        }
+                    }
                 }
             }
         }
         stage('Extract & Update Inventory') {
+            when { expression { env.TF_ACTION == 'apply' } }
             steps {
                 script {
                     dir("${env.TF_DIRECTORY}") {
@@ -34,7 +49,16 @@ pipeline {
                 }
             }
         }
+        stage('Ansible Lint') {
+            when { expression { env.TF_ACTION == 'apply' } }
+            steps {
+                dir("${env.ANSIBLE_DIRECTORY}") {
+                    sh 'ansible-lint -v playbook.yml'
+                }
+            }
+        }
         stage('Ansible Setup & Install Docker') {
+            when { expression { env.TF_ACTION == 'apply' } }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
@@ -45,6 +69,7 @@ pipeline {
             }
         }
         stage('Deploy MySQL & Verify') {
+            when { expression { env.TF_ACTION == 'apply' } }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
