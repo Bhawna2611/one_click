@@ -90,7 +90,9 @@ pipeline {
                         sh "ansible all -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one__click.pem -u ubuntu"
                         sh """
                             ansible all -i inventory.ini -m shell -a '
-                                cd /home/ubuntu/docker && \
+                                cd /home/ubuntu && \
+                                sudo docker stop mysql-db || true && \
+                                sudo docker rm mysql-db || true && \
                                 docker build -t custom-mysql . && \
                                 docker run -d --name mysql-db -p 3306:3306 custom-mysql && \
                                 docker ps
