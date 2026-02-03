@@ -12,6 +12,9 @@ pipeline {
         AWS_DEFAULT_REGION = 'us-east-1'
         // Jenkins maps 'aws-keys' to AWS_CREDS_USR and AWS_CREDS_PSW automatically
         AWS_CREDS = credentials('aws-keys')
+
+        LANG = 'en_US.UTF-8'
+        LC_ALL = 'en_US.UTF-8'
     }
 
     stages {
