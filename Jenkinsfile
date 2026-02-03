@@ -115,7 +115,7 @@ pipeline {
             }
         }
         
-        stage('Deploy MySQL on Docker') {
+        stage('Install MtSQL in Docker container') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
