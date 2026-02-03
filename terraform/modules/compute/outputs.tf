@@ -12,10 +12,9 @@ output "private_ips" {
   value       = data.aws_instances.asg_instances.private_ips
 }
 
-output "public_ip" {
-  value = aws_instance.your_instance_name.public_ip
-}
-
+# Return a single private IP (first running instance) or an empty string when none present.
+# Guarded to avoid errors when ASG hasn't launched instances yet.
 output "private_ip" {
-  value = aws_instance.your_instance_name.private_ip
+  description = "Primary private IP (first instance in ASG) or empty if none"
+  value       = length(data.aws_instances.asg_instances.private_ips) > 0 ? data.aws_instances.asg_instances.private_ips[0] : ""
 }

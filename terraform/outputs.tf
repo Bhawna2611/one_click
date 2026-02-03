@@ -3,6 +3,12 @@ output "private_instance_ips" {
   value       = module.compute.private_ips
 }
 
+# Convenience single IP output for scripts/jobs that expect a single private IP
+output "private_instance_ip" {
+  description = "Primary private IP (first instance) - convenience for scripts that expect single IP"
+  value       = module.compute.private_ip
+}
+
 output "bastion_public_ip" {
   value = module.bastion.bastion_public_ip
 }
