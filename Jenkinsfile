@@ -75,8 +75,8 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "cp ${SSH_KEY} /tmp/one_click.pem && chmod 400 /tmp/one_click.pem"
-                        sh "ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one_click.pem -u ubuntu"
+                        sh "cp ${SSH_KEY} /tmp/one_click.pem && chmod 400 /tmp/one__click.pem"
+                        sh "ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one__click.pem -u ubuntu"
                     }
                 }
             }
@@ -87,14 +87,14 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "ansible all -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one_click.pem -u ubuntu"
+                        sh "ansible all -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one__click.pem -u ubuntu"
                         sh """
                             ansible all -i inventory.ini -m shell -a '
                                 cd /home/ubuntu/docker && \
                                 docker build -t custom-mysql . && \
                                 docker run -d --name mysql-db -p 3306:3306 custom-mysql && \
                                 docker ps
-                            ' --become --private-key=/tmp/one_click.pem -u ubuntu
+                            ' --become --private-key=/tmp/one__click.pem -u ubuntu
                         """
                     }
                 }
@@ -105,7 +105,7 @@ pipeline {
     post { 
         always { 
             // Cleanup sensitive files from the Jenkins agent
-            sh 'rm -f /tmp/one_click.pem' 
+            sh 'rm -f /tmp/one__click.pem' 
         } 
     }
 }
