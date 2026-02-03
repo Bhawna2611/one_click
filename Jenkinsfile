@@ -22,34 +22,42 @@ pipeline {
         }
 
         stage('Terraform Infrastructure') {
-            environment {
-                // Correct way to reference credentials variables in a stage
-                AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
-                AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
-            }
             steps {
-                dir("${env.TF_DIRECTORY}") {
-                    // Added -input=false and -force-copy to stop Terraform from asking for manual input
-                    sh 'terraform init -input=false -migrate-state -force-copy'
-                    
-                    script {
-                        if (params.TF_ACTION == 'apply') {
-                            sh 'terraform apply -auto-approve -input=false'
-                        } else {
-                            sh 'terraform destroy -auto-approve -input=false'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-keys',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    dir("${env.TF_DIRECTORY}") {
+                        // Added -input=false and -force-copy to stop Terraform from asking for manual input
+                        sh 'terraform init -input=false -migrate-state -force-copy'
+                        script {
+                            if (params.TF_ACTION == 'apply') {
+                                sh 'terraform apply -auto-approve -input=false'
+                            } else {
+                                sh 'terraform destroy -auto-approve -input=false'
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Extract & Update Inventory') {
+        stage('Update Inventory') {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 script {
-                    dir("${env.TF_DIRECTORY}") {
-                        env.BASTION_IP = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
-                        env.PRIVATE_IP = sh(script: "terraform output -raw private_instance_ip", returnStdout: true).trim()
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-keys',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        dir("${env.TF_DIRECTORY}") {
+                            env.BASTION_IP = sh(script: "terraform output -raw bastion_public_ip", returnStdout: true).trim()
+                            env.PRIVATE_IP = sh(script: "terraform output -raw private_instance_ip", returnStdout: true).trim()
+                        }
                     }
                     dir("${env.ANSIBLE_DIRECTORY}") {
                         sh "sed -i 's/BASTION_IP_PLACEHOLDER/${env.BASTION_IP}/g' inventory.ini"
