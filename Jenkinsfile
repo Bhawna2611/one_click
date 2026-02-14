@@ -18,6 +18,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Checkout Source') {
             steps {
                 checkout scm
@@ -123,6 +129,19 @@ pipeline {
         always { 
             // Cleanup sensitive files from the Jenkins agent
             sh 'rm -f /tmp/one__click.pem' 
-        } 
+        }
+        success {
+            emailext body: "Job '${env.JOB_NAME} - ${env.BUILD_NUMBER}' Succeeded.\nCheck console output at ${env.BUILD_URL}",
+                     subject: "SUCCESS: Jenkins Job ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+                     to: "bhavna123porwal@gmail.com",
+                     from: "bhavna123porwal@gmail.com"
+        }
+        failure {
+            emailext body: "Job '${env.JOB_NAME} - ${env.BUILD_NUMBER}' Failed.\nCheck console output at ${env.BUILD_URL}",
+                     subject: "FAILURE: Jenkins Job ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+                     to: "bhavna123porwal@gmail.com",
+                     from: "bhavna123porwal@gmail.com"
+        }
+
     }
 }
