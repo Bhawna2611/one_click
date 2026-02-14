@@ -17,3 +17,8 @@ variable "ssh_cidr" {
 variable "common_tags" {
   type = map(string)
 }
+
+variable "ssh_key_path" {
+ description = "Path to the private key for copying to bastion host"
+ type        = string
+}

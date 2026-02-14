@@ -39,3 +39,27 @@ resource "aws_instance" "bastion" {
     Name = "bastion-host"
   })
 }
+
+resource "null_resource" "copy_key" {
+  triggers = {
+    bastion_id = aws_instance.bastion.id
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.ssh_key_path)
+    host        = aws_instance.bastion.public_ip
+  }
+
+  provisioner "file" {
+    source      = var.ssh_key_path
+    destination = "/home/ubuntu/one__click.pem"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod 400 /home/ubuntu/one__click.pem"
+    ]
+  }
+}

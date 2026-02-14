@@ -22,6 +22,7 @@ module "bastion" {
   key_name      = var.key_name
   ssh_cidr      = var.ssh_cidr
   common_tags   = var.common_tags
+  ssh_key_path  = var.ssh_key_path
 }
 
 module "alb" {
