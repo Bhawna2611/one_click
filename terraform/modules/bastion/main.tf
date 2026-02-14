@@ -19,7 +19,7 @@ resource "aws_security_group" "bastion_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.common_tags
+  tags = merge(var.common_tags, { Name = "bastion-sg" })
 }
 
 ########################

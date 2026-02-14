@@ -15,7 +15,7 @@ data "aws_ami" "ubuntu_22" {
 # Security Group (Private EC2)
 ########################
 resource "aws_security_group" "compute_sg" {
-  name   = "compute-sg"
+  name   = "${var.asg_name}-sg"
   vpc_id = var.vpc_id
 
   # SSH ONLY from Bastion SG
@@ -41,14 +41,14 @@ resource "aws_security_group" "compute_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.common_tags
+  tags = merge(var.common_tags, { Name = "${var.asg_name}-sg" })
 }
 
 ########################
 # Launch Template
 ########################
 resource "aws_launch_template" "mysql" {
-  name_prefix   = "mysql-lt-"
+  name_prefix   = "${var.asg_name}-lt-"
   image_id      = data.aws_ami.ubuntu_22.id
   instance_type = var.instance_type
   key_name      = var.key_name
@@ -56,6 +56,8 @@ resource "aws_launch_template" "mysql" {
   vpc_security_group_ids = [aws_security_group.compute_sg.id]
 
   user_data = base64encode(var.user_data)
+
+  tags = var.common_tags
 }
 
 ########################

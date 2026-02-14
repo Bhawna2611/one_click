@@ -1,10 +1,10 @@
 resource "aws_security_group" "alb_sg" {
-  name   = "mysql-sg"
+  name   = "${var.alb_name}-sg"
   vpc_id = var.vpc_id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = var.alb_port
+    to_port     = var.alb_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -16,7 +16,7 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.common_tags
+  tags = merge(var.common_tags, { Name = "${var.alb_name}-sg" })
 }
 
 resource "aws_lb" "this" {
@@ -30,14 +30,16 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "tg" {
-  name     = "mysql-tg"
-  port     = 80
+  name     = "${var.alb_name}-tg"
+  port     = var.alb_port
   protocol = "HTTP"
   vpc_id   = var.vpc_id
 
   health_check {
     path = "/"
   }
+
+  tags = merge(var.common_tags, { Name = "${var.alb_name}-tg" })
 }
 
 resource "aws_lb_listener" "http" {

@@ -4,6 +4,11 @@ provider "aws" {
 
 module "network" {
   source = "./modules/network"
+
+  vpc_cidr      = var.vpc_cidr
+  public_cidrs  = var.public_cidrs
+  private_cidrs = var.private_cidrs
+  common_tags   = var.common_tags
 }
 
 module "bastion" {
@@ -25,6 +30,8 @@ module "alb" {
   vpc_id         = module.network.vpc_id
   public_subnets = module.network.public_subnet_ids
   common_tags    = var.common_tags
+  alb_name       = var.alb_name
+  alb_port       = var.alb_port
 }
 
 module "compute" {
@@ -41,4 +48,5 @@ module "compute" {
   bastion_sg_id = module.bastion.bastion_sg_id
   alb_sg_id     = module.alb.alb_sg_id
   common_tags   = var.common_tags
+  asg_name      = var.asg_name
 }
