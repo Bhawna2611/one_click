@@ -32,8 +32,11 @@ pipeline {
 
         stage('Terraform Infrastructure') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-keys', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([usernamePassword(credentialsId: 'aws-keys', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'), sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.TF_DIRECTORY}") {
+                        // Copy SSH key for Terraform to use
+                        sh "cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
+                        
                         // Added -input=false and -force-copy to stop Terraform from asking for manual input
                         sh 'terraform init -input=false -migrate-state -force-copy'
                         script {
