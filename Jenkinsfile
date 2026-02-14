@@ -82,21 +82,36 @@ pipeline {
             }
         }
 
-        stage('Deploy MySQL & Verify') {
+        stage('Deploy Employee Management Application') {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "ansible all -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/' --private-key=/tmp/one__click.pem -u ubuntu"
+                        // Copy entire docker folder to remote server
+                        sh "ansible all -i inventory.ini -m copy -a 'src=../docker/ dest=/home/ubuntu/employee-app/' --private-key=/tmp/one__click.pem -u ubuntu"
+                        
+                        // Deploy using docker-compose
                         sh """
                             ansible all -i inventory.ini -m shell -a '
-                                cd /home/ubuntu && \
-                                sudo docker stop mysql-db || true && \
-                                sudo docker rm mysql-db || true && \
-                                docker build -t custom-mysql . && \
-                                docker run -d --name mysql-db -p 3306:3306 custom-mysql && \
-                                docker ps
+                                cd /home/ubuntu/employee-app && \\
+                                sudo docker-compose down || true && \\
+                                sudo docker-compose up -d --build && \\
+                                sleep 10 && \\
+                                sudo docker-compose ps
                             ' --become --private-key=/tmp/one__click.pem -u ubuntu
+                        """
+                        
+                        // Verify deployment
+                        sh """
+                            ansible all -i inventory.ini -m shell -a '
+                                echo "=== Checking Frontend ===" && \\
+                                curl -f http://localhost:3000 -o /dev/null -s -w "Frontend Status: %{http_code}\\n" && \\
+                                echo "=== Checking API ===" && \\
+                                curl -f http://localhost:3000/api/employees -s | head -c 100 && \\
+                                echo "" && \\
+                                echo "=== Container Status ===" && \\
+                                sudo docker-compose -f /home/ubuntu/employee-app/docker-compose.yml ps
+                            ' --private-key=/tmp/one__click.pem -u ubuntu
                         """
                     }
                 }

@@ -60,14 +60,22 @@ function displayEmployees(employees) {
             <td>${employee.department || '-'}</td>
             <td>${employee.position || '-'}</td>
             <td class="actions">
-                <button class="btn btn-edit" onclick="editEmployee(${employee.id})">
+                <button class="btn btn-edit" data-id="${employee.id}">
                     ✏️ Edit
                 </button>
-                <button class="btn btn-danger" onclick="deleteEmployee(${employee.id}, '${employee.name}')">
+                <button class="btn btn-danger" data-id="${employee.id}" data-name="${employee.name}">
                     🗑️ Delete
                 </button>
             </td>
         `;
+
+        // Add event listeners to the buttons
+        const editBtn = row.querySelector('.btn-edit');
+        editBtn.addEventListener('click', () => editEmployee(employee.id));
+
+        const deleteBtn = row.querySelector('.btn-danger');
+        deleteBtn.addEventListener('click', () => deleteEmployee(employee.id, employee.name));
+
         tableBody.appendChild(row);
     });
 }
