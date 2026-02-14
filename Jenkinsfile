@@ -88,7 +88,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Employee Management Application') {
+        stage('Docker setup & install MySQL') {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
