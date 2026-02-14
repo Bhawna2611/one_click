@@ -18,9 +18,6 @@ variable "ssh_cidr" {
   type = list(string)
 }
 
-variable "user_data" {
-  default = ""
-}
 
 variable "common_tags" {
   type = map(string)
