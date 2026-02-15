@@ -32,7 +32,7 @@ pipeline {
 
         stage('Terraform Infrastructure') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
+                withCredentials([usernamePassword(credentialsId: 'aws-keys', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'), sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.TF_DIRECTORY}") {
                         // Copy SSH key for Terraform to use
                         sh "rm -f /tmp/one__click.pem && cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
@@ -135,16 +135,20 @@ pipeline {
             sh 'rm -f /tmp/one__click.pem' 
         }
         success {
-            emailext body: "Job '${env.JOB_NAME} - ${env.BUILD_NUMBER}' Succeeded.\nCheck console output at ${env.BUILD_URL}",
-                     subject: "SUCCESS: Jenkins Job ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                     to: "bhavna123porwal@gmail.com",
-                     from: "bhavna123porwal@gmail.com"
+           // Send Email notification on Success
+            mail to: 'bhavna123porwal@gmail.com',
+                 from: 'bhavna123porwal@gmail.com',
+                 subject: "Success: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
+                 body: "Check details at ${env.BUILD_URL}"
         }
+
         failure {
-            emailext body: "Job '${env.JOB_NAME} - ${env.BUILD_NUMBER}' Failed.\nCheck console output at ${env.BUILD_URL}",
-                     subject: "FAILURE: Jenkins Job ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                     to: "bhavna123porwal@gmail.com",
-                     from: "bhavna123porwal@gmail.com"
+
+            // Send Email notification on Failure
+            mail to: 'bhavna123porwal@gmail.com',
+                 from: 'bhavna123porwal@gmail.com',
+                 subject: "FAILURE: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
+                 body: "The build failed. Please check the logs at ${env.BUILD_URL}"
         }
 
     }
