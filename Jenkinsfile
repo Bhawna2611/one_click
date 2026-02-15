@@ -32,10 +32,10 @@ pipeline {
 
         stage('Terraform Infrastructure') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-keys', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'), sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.TF_DIRECTORY}") {
                         // Copy SSH key for Terraform to use
-                        sh "cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
+                        sh "rm -f /tmp/one__click.pem && cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
                         
                         // Added -input=false and -force-copy to stop Terraform from asking for manual input
                         sh 'terraform init -input=false -migrate-state -force-copy'
@@ -84,7 +84,8 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'my-server-ssh-key-v1', keyFileVariable: 'SSH_KEY')]) {
                     dir("${env.ANSIBLE_DIRECTORY}") {
-                        sh "cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
+                        // Copy SSH key for Terraform to use
+                        sh "rm -f /tmp/one__click.pem && cp ${SSH_KEY} /tmp/one__click.pem && chmod 400 /tmp/one__click.pem"
                         sh "ansible-playbook -i inventory.ini playbook.yml --private-key=/tmp/one__click.pem -u ubuntu"
                     }
                 }
