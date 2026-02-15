@@ -28,8 +28,8 @@ resource "aws_security_group" "compute_sg" {
 
   # App traffic from ALB
   ingress {
-    from_port       = 80
-    to_port         = 80
+    from_port       = var.app_port
+    to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [var.alb_sg_id]
   }

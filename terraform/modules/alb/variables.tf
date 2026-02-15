@@ -24,3 +24,8 @@ variable "common_tags" {
   description = "Tags for ALB"
   type        = map(string)
 }
+
+variable "app_port" {
+  description = "Port the application is listening on"
+  type        = number
+}

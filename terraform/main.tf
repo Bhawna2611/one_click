@@ -33,6 +33,7 @@ module "alb" {
   common_tags    = var.common_tags
   alb_name       = var.alb_name
   alb_port       = var.alb_port
+  app_port       = var.app_port
 }
 
 module "compute" {
@@ -45,6 +46,7 @@ module "compute" {
   instance_type = var.instance_type
   key_name      = var.key_name
   user_data     = var.user_data
+  app_port      = var.app_port
 
   bastion_sg_id = module.bastion.bastion_sg_id
   alb_sg_id     = module.alb.alb_sg_id

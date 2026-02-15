@@ -77,8 +77,15 @@ variable "alb_port" {
   default     = 80
 }
 
+
 variable "inventory_file" {
   description = "Path to the Ansible inventory file"
   type        = string
   default     = "../ansible/inventory.ini"
+}
+
+variable "app_port" {
+  description = "Port the application is listening on"
+  type        = number
+  default     = 3000
 }

@@ -16,6 +16,10 @@ variable "user_data" {
   default = ""
 }
 
+variable "app_port" {
+  type = number
+}
+
 variable "bastion_sg_id" {}
 
 variable "alb_sg_id" {}
