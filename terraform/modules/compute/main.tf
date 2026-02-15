@@ -76,6 +76,11 @@ resource "aws_autoscaling_group" "mysql" {
     id      = aws_launch_template.mysql.id
     version = "$Latest"
   }
+
+  # Allow target group changes without forcing ASG replacement
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Data source to fetch current instances in the ASG via instance tags
