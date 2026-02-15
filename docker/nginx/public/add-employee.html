@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee - Employee Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="page-title">➕ Add New Employee</h1>
+            <a href="/index.html" class="btn btn-primary">
+                ← Back to List
+            </a>
+        </div>
+
+        <div class="card">
+            <div id="alert-container"></div>
+
+            <form id="employee-form">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter employee name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required placeholder="employee@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+1-555-0123">
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" name="department" placeholder="e.g., Engineering, Sales">
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position</label>
+                    <input type="text" id="position" name="position" placeholder="e.g., Software Engineer">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success" id="submit-btn">
+                        💾 Save Employee
+                    </button>
+                    <a href="/index.html" class="btn" style="background: #6b7280; color: white;">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check if we're editing an employee
+        const urlParams = new URLSearchParams(window.location.search);
+        const employeeId = urlParams.get('id');
+
+        if (employeeId) {
+            document.getElementById('page-title').textContent = '✏️ Edit Employee';
+            document.getElementById('submit-btn').innerHTML = '💾 Update Employee';
+            loadEmployeeData(employeeId);
+        }
+
+        // Handle form submission
+        document.getElementById('employee-form').addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+
+</html>
