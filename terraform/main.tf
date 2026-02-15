@@ -9,6 +9,10 @@ module "network" {
   public_cidrs  = var.public_cidrs
   private_cidrs = var.private_cidrs
   common_tags   = var.common_tags
+  
+  vpc_name = var.vpc_name
+  igw_name = var.igw_name
+  nat_name = var.nat_name
 }
 
 module "bastion" {

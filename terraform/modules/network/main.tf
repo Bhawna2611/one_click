@@ -1,13 +1,13 @@
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-  tags                 = merge(var.common_tags, { Name = "main-vpc" })
+  tags                 = merge(var.common_tags, { Name = var.vpc_name })
 }
 
 # 2. Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
-  tags   = merge(var.common_tags, { Name = "main-igw" })
+  tags   = merge(var.common_tags, { Name = var.igw_name })
 }
 
 # 3. Availability Zones Data
@@ -37,13 +37,13 @@ resource "aws_subnet" "private" {
 # 6. NAT Gateway setup (Public Subnet mein)
 resource "aws_eip" "nat" {
   domain = "vpc"
-  tags   = merge(var.common_tags, { Name = "nat-eip" })
+  tags   = merge(var.common_tags, { Name = "${var.nat_name}-eip" })
 }
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
-  tags          = merge(var.common_tags, { Name = "main-nat" })
+  tags          = merge(var.common_tags, { Name = var.nat_name })
 }
 
 # 7. Public Route Table

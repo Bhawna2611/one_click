@@ -17,3 +17,6 @@ asg_name      = "mysql-asg"
 ansible_user  = "ubuntu"
 ssh_key_path  = "/tmp/one__click.pem"
 alb_port      = 80
+vpc_name      = "mysql-vpc"
+igw_name      = "mysql-igw"
+nat_name      = "mysql-nat"

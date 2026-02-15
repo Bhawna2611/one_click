@@ -89,3 +89,21 @@ variable "app_port" {
   type        = number
   default     = 3000
 }
+
+variable "vpc_name" {
+  description = "Name for the VPC"
+  type        = string
+  default     = "mysql-vpc"
+}
+
+variable "igw_name" {
+  description = "Name for the Internet Gateway"
+  type        = string
+  default     = "mysql-igw"
+}
+
+variable "nat_name" {
+  description = "Name for the NAT Gateway"
+  type        = string
+  default     = "mysql-nat"
+}
