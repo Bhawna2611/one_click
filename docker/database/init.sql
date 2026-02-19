@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS employees (
 
 -- Insert sample data
 INSERT INTO employees (name, email, phone, department, position) VALUES
-('John Doe', 'john.doe@example.com', '+1-555-0101', 'Engineering', 'Software Engineer'),
-('Jane Smith', 'jane.smith@example.com', '+1-555-0102', 'Marketing', 'Marketing Manager'),
-('Bob Johnson', 'bob.johnson@example.com', '+1-555-0103', 'Sales', 'Sales Representative');
+('bhawna', 'bhawna@example.com', '+1-555-0101', 'Engineering', 'Software Engineer'),
+('dhairya', 'dhairya@example.com', '+1-555-0102', 'Marketing', 'Marketing Manager'),
+('anirudhh', 'aniruddh@example.com', '+1-555-0103', 'Sales', 'Sales Representative');
