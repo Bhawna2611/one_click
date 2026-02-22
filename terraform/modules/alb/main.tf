@@ -30,8 +30,7 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "tg" {
-  # Adding the port to the name is good, but ensure it doesn't 
-  # exceed 32 characters or contain invalid characters.
+  
   name     = "${var.alb_name}-tg-${var.app_port}"
   port     = var.app_port
   protocol = "HTTP"
@@ -41,7 +40,6 @@ resource "aws_lb_target_group" "tg" {
     path = "/"
   }
 
-  # This block is the "magic" that prevents the Delete error
   lifecycle {
     create_before_destroy = true
   }

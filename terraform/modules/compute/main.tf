@@ -1,6 +1,4 @@
-########################
 # Ubuntu 22.04 AMI
-########################
 data "aws_ami" "ubuntu_22" {
   most_recent = true
   owners      = ["099720109477"]
@@ -11,9 +9,7 @@ data "aws_ami" "ubuntu_22" {
   }
 }
 
-########################
 # Security Group (Private EC2)
-########################
 resource "aws_security_group" "compute_sg" {
   name   = "${var.asg_name}-sg"
   vpc_id = var.vpc_id
@@ -44,9 +40,7 @@ resource "aws_security_group" "compute_sg" {
   tags = merge(var.common_tags, { Name = "${var.asg_name}-sg" })
 }
 
-########################
 # Launch Template
-########################
 resource "aws_launch_template" "mysql" {
   name_prefix   = "${var.asg_name}-lt-"
   image_id      = data.aws_ami.ubuntu_22.id
@@ -60,9 +54,7 @@ resource "aws_launch_template" "mysql" {
   tags = var.common_tags
 }
 
-########################
 # Auto Scaling Group
-########################
 resource "aws_autoscaling_group" "mysql" {
   name              = var.asg_name
   min_size          = 1
@@ -77,14 +69,12 @@ resource "aws_autoscaling_group" "mysql" {
     version = "$Latest"
   }
 
-  # Allow target group changes without forcing ASG replacement
+  
   lifecycle {
     create_before_destroy = true
   }
 }
 
-# Data source to fetch current instances in the ASG via instance tags
-# ASG sets the tag 'aws:autoscaling:groupName' on instances it manages
 data "aws_instances" "asg_instances" {
   filter {
     name   = "tag:aws:autoscaling:groupName"

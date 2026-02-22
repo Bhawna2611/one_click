@@ -10,7 +10,6 @@ pipeline {
         TF_DIRECTORY = 'terraform'
         ANSIBLE_DIRECTORY = 'ansible'
         AWS_DEFAULT_REGION = 'us-east-1'
-        // Jenkins maps 'aws-keys' to AWS_CREDS_USR and AWS_CREDS_PSW automatically
         AWS_CREDS = credentials('aws-keys')
 
         LANG = 'en_US.UTF-8'
@@ -73,7 +72,6 @@ pipeline {
             when { expression { params.TF_ACTION == 'apply' } }
             steps {
                 dir("${env.ANSIBLE_DIRECTORY}") {
-                    // || true prevents the pipeline from failing if there are only minor linting warnings
                     sh 'ansible-lint -v playbook.yml || true'
                 }
             }

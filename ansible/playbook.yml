@@ -1,8 +1,8 @@
 ---
-- name: Configure Web Server and Install Docker
+- name: Docker Installation
   hosts: web
   become: true
-  gather_facts: yes  # This MUST be yes to detect Ubuntu version
+  gather_facts: yes  
 
   roles:
-    - docker         # This calls the docker role
+    - role_docker_install       

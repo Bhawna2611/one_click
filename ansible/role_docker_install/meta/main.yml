@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: Bhawna Dangarh
+  description: Install and configure Docker and Docker Compose on Ubuntu
+  license: MIT
+  min_ansible_version: 2.17
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
